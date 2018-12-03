@@ -90,12 +90,6 @@ public:
     {
 		::pthread_mutexattr_t *mutex_attr = nullptr;
 		::pthread_mutex_init(&m_lock, mutex_attr);
-
-#if defined(__WAIT_QUEUE__)
-		::pthread_condattr_t *cond_attr = nullptr;
-		::pthread_cond_init(&write_wait_queue, cond_attr);
-		::pthread_cond_init(&read_wait_queue, cond_attr);
-#endif
     }
 
     ~CircularBuffer()
@@ -112,7 +106,7 @@ public:
         return m_read_pos==m_write_pos;
     }
 
-    const bool put(const int &value)
+    const bool put(const T &obj)
     {
         bool ret = false;
 
@@ -124,7 +118,7 @@ public:
                 return false;
             }
             
-            m_buffer[m_write_pos] = value;
+            m_buffer[m_write_pos] = obj;
             m_write_pos = (m_write_pos + 1) % m_size;
 
 
@@ -136,7 +130,7 @@ public:
         return ret;
     } 
 
-    const bool get(int &value)
+    const bool get(T &obj)
     {
         bool ret = false;
 
@@ -148,7 +142,7 @@ public:
                 return ret;
             }
 
-            value = m_buffer[m_read_pos];
+            obj = m_buffer[m_read_pos];
             m_read_pos = (m_read_pos + 1)%m_size;
 
             ret = true;
@@ -161,12 +155,6 @@ public:
 
 
 private:
-
-#if defined(__WAIT_QUEUE__)
-	pthread_cond_t write_wait_queue;
-	pthread_cond_t read_wait_queue;
-#endif
-
 	const int m_size;
 	T m_buffer[N];
 	pthread_mutex_t m_lock;
@@ -175,9 +163,11 @@ private:
 };
 
 
+
 //----------------------------------------
 //    Producer Class
 //----------------------------------------
+template<typename T>
 class Producer
 {
 public:
@@ -201,22 +191,17 @@ public:
 
 private:
 	void write();
-	//void lock();
-	//void unlock();
-	//void wait_on_write_queue();
-
-	//void wakeup_read_queue();
-	//const bool is_buffer_full() const;
 
 private:
     CircularBuffer<int, NUMBER_OF_SLOTS> &m_buffer;
 
-	int m_value;
+    int m_value
 };
 
 //----------------------------------------
 //    Consumer Class
 //----------------------------------------
+template<typename T>
 class Consumer
 {
 public:
@@ -238,10 +223,6 @@ public:
 
 private:
 	void read();
-	//void wait_on_read_queue();
-	//void wakeup_write_queue();
-
-	//const bool is_buffer_empty() const;
 
 private:
     CircularBuffer<int, NUMBER_OF_SLOTS> &m_buffer;

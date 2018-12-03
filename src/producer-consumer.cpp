@@ -11,9 +11,10 @@
 //--------------------------------------------
 //  Producer Implementation
 //--------------------------------------------
-void *Producer::run(void * data)
+template<typename T>
+void *Producer<T>::run(void * data)
 {
-	Producer *prod = static_cast<Producer *>(data);
+	Producer<T> *prod = static_cast<Producer<T> *>(data);
 
 	bool done=true;
 
@@ -29,39 +30,12 @@ void *Producer::run(void * data)
 	return nullptr;
 }
 
-#if 0
-const bool Producer::is_buffer_full() const
+template<typename T>
+void Producer<T>::write()
 {
-	printf("thread -----> %s\n", __func__);
-	return (m_data.read_pos==m_data.write_pos);
-}
-
-void Producer::lock()
-{
-	::pthread_mutex_lock(&m_data.lock);
-}
-
-void Producer::unlock()
-{
-	::pthread_mutex_unlock(&m_data.lock);
-}
-
-
-void Producer::wakeup_read_queue()
-{
-	::pthread_cond_signal(&m_data.read_wait_queue);
-}
-
-void Producer::wait_on_write_queue()
-{
-	::pthread_cond_wait(&m_data.write_wait_queue,
-                        &m_data.lock);
-}
-#endif
-
-void Producer::write()
-{
-	if (m_buffer.put(m_value))
+	T msg(m_value);
+	
+	if (m_buffer.put(msg))
 	{
 		m_value += 1;
 	}
@@ -71,9 +45,10 @@ void Producer::write()
 //----------------------------------------------
 //   Consumer Implementation
 //----------------------------------------------
-void *Consumer::run(void * data)
+template<typename T>
+void *Consumer<T>::run(void * data)
 {
-	Consumer *con = static_cast<Consumer *>(data);
+	Consumer<T> *con = static_cast<Consumer<T> *>(data);
     bool done = true;
 
 	printf("thread -----> 3 %s\n", __func__);
@@ -86,43 +61,14 @@ void *Consumer::run(void * data)
 	return nullptr;
 }
 
-void Consumer::read()
+template<typename T>
+void Consumer<T>::read()
 {
-	int value;
-	if (m_buffer.get(value))
+	T msg;
+	if (m_buffer.get(msg))
 	{
-		::printf("debug ---> %d\n", value);
+		::printf("debug ---> %d\n", msg.getValue());
 	}
 }
-
-
-#if 0
-const bool Consumer::is_buffer_empty() const
-{
-	return (m_data.read_pos==m_data.write_pos+1);
-}
-
-void Consumer::lock()
-{
-	::pthread_mutex_lock(&m_data.lock);
-}
-
-void Consumer::unlock()
-{
-	::pthread_mutex_unlock(&m_data.lock);
-}
-
-void Consumer::wait_on_read_queue()
-{
-	::pthread_cond_wait(&m_data.read_wait_queue, &m_data.lock);
-}
-
-void Consumer::wakeup_write_queue()
-{
-	::pthread_cond_signal(&m_data.write_wait_queue);
-}
-
-#endif
-
 
 
